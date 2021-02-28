@@ -1,9 +1,13 @@
 import ast
 import tokenize
 import sys
+import os
+from io import StringIO
 
 def main():
     file = sys.argv[1]
+    cwd = os.getcwd()
+    token_strs = []
     with open(file, "r") as source:
         t = ast.parse(source.read())
     
@@ -13,6 +17,8 @@ def main():
         for token in tokens:
             if token.exact_type == 55: #COMMENT
                 print("Line: ", token.start[0], ", Comment: ", token.string)
+            if token.exact_type != 5 and token.exact_type != 6: #IDENT/DEDENT
+                token_strs.append(token.string)
 
     impFinder = ImportFinder()
     impFinder.visit(t)
@@ -23,6 +29,7 @@ def main():
     funcFinder.visit(t)
     funcFinder.print()
     funclist = funcFinder.getFunctions()
+    fdict = funcFinder.getFdict()
 
     varFinder = VariableFinder()
     varFinder.setFunctions(funclist)
@@ -30,18 +37,110 @@ def main():
     varFinder.visit(t)
     varFinder.print()
 
+    bodies = []
+    """
     with open(file, "r") as f:
-        bodydict = {}
+        fheadlines = []
+        body = None
+        for k, v in fdict.items():
+                fheadlines.append(v[0])
         i = 1
+        in_body = False
+        end_of_doc = False
         for line in f:
-            for k, v in fdict.items:
+            for j in range(len(fheadlines)):
                 # compare line against function def
-                if i == v[0]:
+                if fheadlines[j] <= i:
+                    if fheadlines[j] == i:
+                        in_body = True
+                        break
 
+                    try:
+                        if i == fheadlines[j+1]:
+                            in_body = False
+                            bodies.append(body)
+                            body = None
+                    except IndexError:
+                        end_of_doc = True
+                        continue
+            if end_of_doc:
+                in_body = True
+            if in_body:
+                if not body:
+                    body = []
+                body.append(line)
+            i += 1
+    print(bodies)
+    """
+    tdict = {}
+
+    with tokenize.open(file) as f:
+        type_filter = [5, 6, 55] #IDENT, DEDENT, COMMENT
+        fheadlines = []
+        body = None
+        for k, v in fdict.items():
+            fheadlines.append((k, v[0]))
+        i = 1
+        in_body = False
+        end_of_doc = False
+        for line in f:
+            for j in range(len(fheadlines)):
+                # compare line against function def
+                if fheadlines[j][1] <= i:
+                    if fheadlines[j][1] == i:
+                        in_body = True
+                        break
+
+                    try:
+                        if i == fheadlines[j+1][1]:
+                            in_body = False
+                            tdict[fheadlines[j][0]] = body
+                            bodies.append(body)
+                            body = None
+                    except IndexError:
+                        end_of_doc = True
+                        continue
+            if end_of_doc:
+                in_body = True
+            if in_body:
+                if not body:
+                    body = []
+                ts = tokenize.generate_tokens(StringIO(line).readline)
+                tokenized_line = []
+                for token in ts:
+                    if token.exact_type not in type_filter:
+                        tokenized_line.append(token.string)
+                body.extend(tokenized_line)
             i += 1
 
+    var_dict = populate_var_dict(fdict, tdict)
+    for k, v in var_dict.items():
+        print(f"For variable {k}, we have tokens of {len(v)} functions.\n")
 
-    # TODO: create dictionary of lists
+def populate_var_dict(fdict, tdict):
+    var_dict = {}
+    for fname, v in fdict.items():
+        fparams = v[1:][0]
+        #fname is the function name (key)
+        #v[0] is the starting lineno
+        #v[1:] are all func parameters
+        print(f"For {fname}, we have parameters {fparams}")
+        for var in fparams:
+            entry = []
+            if var in var_dict:
+                entry = var_dict[var]
+            if fname in tdict:
+                entry.append(tdict[fname])
+            var_dict[var] = entry
+    return var_dict
+
+
+
+    #TODO: variable(key): [[f1 tokens], [f2 tokens], ... ]}
+    # need a dict with function name : tokens
+    # need a dict with function name : variables --> fdict
+    # for each variable, for each function name: check if var gets called in f
+    # if yes, get tokens of f and add to var dict
 
 class FunctionData:
     def __init__(self):
@@ -95,6 +194,9 @@ class FunctionFinder(ast.NodeVisitor):
     def getFunctions(self):
         return self.funcs
     
+    def getFdict(self):
+        return self.fdict
+    
     def print(self):
         print("Functions with arguments: ")
         for k, v in self.fdict.items():
@@ -119,10 +221,13 @@ class VariableFinder(ast.NodeVisitor):
             self.vars.append((node.lineno, node.id))
         self.generic_visit(node)
     
+    def getUniqueVars(self):
+        return set([y for (x,y) in self.vars])
+    
     def print(self):
         # only print unique variables names
         print("Variables used in lines: \n", sorted(self.vars, key=lambda x: x[0]))
-        print("Unique variables used: \n", set([y for (x,y) in self.vars]))
+        print("Unique variables used: \n", self.getUniqueVars())
 
 if __name__ == "__main__":
     main()
