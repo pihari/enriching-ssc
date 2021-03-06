@@ -180,7 +180,7 @@ for subdir in datadirs:
 
 #%%
 # Extract only sentences with variables in it
-# filter useless lines
+# filter out useless lines
 line_filter = [
     "",
     "$$\n",
@@ -216,13 +216,20 @@ toc = tex2py(data)
 
 #%%
 filename = "varctx.txt"
-with open(filename) as f:
-    for line in f:
-        vs = ["alpha"]
-        for v in vs:
-            _revar = re.compile(rf'(.*?){v}(.*?)')
+
+def extract_all_lines_with_variable(file, var):
+    lines_with_var = []
+    with open(file) as f:
+        for line in f:
+            _revar = re.compile(rf'(.*?){var}(.*?)')
             if re.match(_revar, line):
-                print(line)
+                lines_with_var.append(line)
+    return lines_with_var
+
+alpha_lines = extract_all_lines_with_variable(filename, "X")
+print(alpha_lines)
+
+                
 
 #TODO: now align variables from code AST and these to create pairs
 

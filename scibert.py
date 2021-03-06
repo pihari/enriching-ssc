@@ -78,6 +78,10 @@ def tokenize_string(s, tokenizer):
 example_str = "More importantly, while the model's hyper-parameters were tuned on the validation set, the performance improvements translate to the private test set as scored by the ConvAI2 evaluation server with a $45\%$ absolute improvement in perplexity (PPL), $46\%$ absolute improvement in Hits@1 and $20\%$ improvement in F1."
 ts, ls = tokenize_string(example_str, tokenizer)
 
+#%%
+example_in = tokenizer(example_str, return_tensors="pt")
+example_out = model(**example_in)
+
 
 #%%
 cats = tokenizer("We describe a cat.", return_tensors="pt")
