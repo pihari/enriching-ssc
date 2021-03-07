@@ -85,21 +85,21 @@ class ASTTraverser:
 
 
 def main():
-    file = sys.argv[1]
+    #file = sys.argv[1]
     # cwd = os.getcwd()
-    with open(file, "r") as source:
-        t = ast.parse(source.read())
+    #with open(file, "r") as source:
+    #    t = ast.parse(source.read())
 
     #impFinder = ImportFinder()
     #impFinder.visit(t)
     #impList = impFinder.getImports()
     #print("Import (aliases): ", impList)
 
-    funcFinder = FunctionFinder()
-    funcFinder.visit(t)
+    #funcFinder = FunctionFinder()
+    #funcFinder.visit(t)
     #funcFinder.print()
     #funclist = funcFinder.getFunctions()
-    fdict = funcFinder.getFdict()
+    #fdict = funcFinder.getFdict()
 
     #varFinder = VariableFinder()
     #varFinder.setFunctions(funclist)
@@ -107,11 +107,12 @@ def main():
     #varFinder.visit(t)
     #varFinder.print()
 
-    trav = ASTTraverser()
-    trav.populate_dicts(file, fdict)
+    #trav = ASTTraverser()
+    #trav.populate_dicts(file, fdict)
+    print("Weird call.")
 
-    for k, v in trav.get_var_dict().items():
-        print(f"For variable {k}, we have tokens of {len(v)} function(s).\n")
+    #for k, v in trav.get_var_dict().items():
+    #    print(f"For variable {k}, we have tokens of {len(v)} function(s).\n")
 
 def populate_tdict(file, fdict):
     tdict = {}
