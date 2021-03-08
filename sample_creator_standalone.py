@@ -123,10 +123,11 @@ from transformers import *
 def main_scs():
     text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
     text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
+    data_path = "/data/s1/haritz/scraped"
     paper_dirpath = "1901 pwc"
-    paper_dircontent = [name for name in os.walk(os.path.join(os.getcwd(), paper_dirpath))]
+    paper_dircontent = [name for name in os.walk(os.path.join(data_path, paper_dirpath))]
     repo_dirpath = "repos"
-    repo_dircontent = [name for name in os.walk(os.path.join(os.getcwd(), repo_dirpath))]
+    repo_dircontent = [name for name in os.walk(os.path.join(data_path, repo_dirpath))]
     samples = []
     datadirs = []
     for e in paper_dircontent[0][1]:
@@ -138,7 +139,7 @@ def main_scs():
     for subdir in datadirs:
         print(f"Parsing directory {cur_dir_counter} / {n_dirs}", end="\r")
         cur_dir_counter += 1
-        cur_dir = os.path.join(os.getcwd(), paper_dirpath+"/"+subdir)
+        cur_dir = os.path.join(data_path, paper_dirpath+"/"+subdir)
         files = os.listdir(cur_dir)
         for fl in files:
             if re.search(r'main\.tex$', fl):
@@ -146,7 +147,7 @@ def main_scs():
                 paper_dict = populate_sentence_dict(paper_sentences)
                 # find corresponding repo
                 for repo in repo_dircontent[0][1]:
-                    repo_dir = os.path.join(os.getcwd(), repo_dirpath+"/"+repo+"/")
+                    repo_dir = os.path.join(data_path, repo_dirpath+"/"+repo+"/")
                     for py_file in os.listdir(repo_dir):
                         if re.match(r'.*\.py$', py_file):
                             #print(f"Parsing {py_file} from {repo_dir}...")
