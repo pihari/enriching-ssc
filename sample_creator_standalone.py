@@ -176,6 +176,7 @@ def main_scs():
         counter += 1
         print(f"Encoding samples {counter}/{n_samp}", end="\r")
         embeddings.append(enc_sample)
+    print("Total samples created: ", counter)
 
 
 from ast_traverser import *
