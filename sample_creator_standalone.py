@@ -1,5 +1,6 @@
 
 import re
+import pandas as pd
 # 1. Split lines into sentences
 # 2a. Remove comments, latex environments, algorithms, ...
 # 2b. Keep variables in $..$ envs
@@ -123,12 +124,13 @@ from transformers import *
 def main_scs():
     text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
     text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
-    data_path = "/data/s1/haritz/scraped"
+    data_path = "/data/s1/haritz/scraped/"
     paper_dirpath = "1901 pwc"
     paper_dircontent = [name for name in os.walk(os.path.join(data_path, paper_dirpath))]
     repo_dirpath = "repos"
     repo_dircontent = [name for name in os.walk(os.path.join(data_path, repo_dirpath))]
     samples = []
+    samplefile = "samplefile.txt"
     datadirs = []
     for e in paper_dircontent[0][1]:
         # folder name format: YYMM.#####
@@ -156,6 +158,8 @@ def main_scs():
                                 sample = generate_positive_samples(paper_dict, code_dict)
                                 for e in sample:
                                     samples.append(e)
+    df = pd.DataFrame(samples, columns=["paper_tokens", "code_tokens", "label"])
+    df.to_csv(os.path.join(data_path, "samples.csv"), index=False)
     # load code model
     code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
     code_model = AutoModel.from_pretrained("microsoft/codebert-base")
@@ -167,18 +171,51 @@ def main_scs():
     embeddings = []
     counter = 0
     n_samp = len(samples)
+    print(f"Number of samples: {n_samp}")
     for ti, ci, li in samples:
-        ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
-        ti_emb = text_model(**ti_tokens)
-        ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
-        ci_emb = code_model(**ci_tokens)
-        enc_sample = (ti_emb, ci_emb, li)
+        try:
+            ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
+            ti_emb = text_model(**ti_tokens)
+            ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
+            ci_emb = code_model(**ci_tokens)
+            enc_sample = (ti_emb, ci_emb, li)
+            embeddings.append(enc_sample)
+        except:
+            print("Error tokenizing/encoding. Skipping...")
+            continue
         counter += 1
+        print(counter)
         print(f"Encoding samples {counter}/{n_samp}", end="\r")
-        embeddings.append(enc_sample)
     print("Total samples created: ", counter)
-    print(embeddings[counter])
+    print(embeddings)
 
+def main_from_file():
+    embeddings = []
+    text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
+    text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
+    code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
+    code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+    samples = pd.read_csv("samples.csv")
+    n_samp = len(samples)
+    counter=0
+    for index, row in samples.iterrows():
+        counter += 1
+        ti = row['paper_tokens']
+        ci = row['code_tokens']
+        try:
+            ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
+            ti_emb = text_model(**ti_tokens)
+            ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
+            ci_emb = code_model(**ci_tokens)
+            embeddings.append((ti_emb, ci_emb, row['label']))
+        except:
+            continue
+        if counter % 20 == 0:
+            emb_df = pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb", "label"])
+            emb_df.to_csv("emb_samples.csv", index=False, mode="a")
+            embeddings = []
+            del emb_df
+        print(f"Sample {counter} of {n_samp}", end="\r")
 
 from ast_traverser import *
 def traverse_py_file(path, filename):
@@ -208,6 +245,8 @@ def generate_positive_samples(sdict, vdict):
             for sk, sv in sdict.items():
                 if sk in vdict and len(vdict[sk]) > 0:
                     for i in range(len(sv)):
+                        #sample = (sdict[sk][i], vdict[sk][0], "1")
+                        #tensor_to_file(sample, tensorfile)
                         samples.append((sdict[sk][i], vdict[sk][0], "1"))
                         # this is stupid, index needs fixing
                         # FIXME: apparently problem is not sdict but empty vdict!
@@ -222,6 +261,20 @@ def tokenize_string(s, tokenizer):
         tokens.extend(token)
     return tokens
 
-if __name__ == "__main__":
-    main_scs()
+import numpy as np
+def tensor_to_file(sample, file):
+    with open(file, "a") as f:
+        stensor, vtensor, label = sample
+        np.savetxt(f, stensor.numpy())
+        np.savetxt(f, vtensor.numpy())
+        np.savetxt(f, label)
+        f.close()
 
+def sample_to_file(sample, file):
+    with open(file, "a") as f:
+        for e in sample:
+            np.savetxt(f, e)
+        f.close()
+
+if __name__ == "__main__":
+    main_from_file()
