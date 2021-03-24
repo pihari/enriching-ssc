@@ -203,6 +203,7 @@ def main_from_file():
     counter=0
     print("Starting sample generation...")
     for index, row in samples.iterrows():
+        print(f"Sample {counter} of {n_samp}", end="\r")
         counter += 1
         ti = row['paper_tokens']
         ci = row['code_tokens']
@@ -211,6 +212,7 @@ def main_from_file():
             ti_emb = text_model(**ti_tokens)
             ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
             ci_emb = code_model(**ci_tokens)
+            print(ti_emb.size(), ci_emb.size())
             embeddings.append((ti_emb.detach().cpu().numpy(), ci_emb.detach().cpu().numpy(), row['label']))
         except:
             continue
@@ -219,7 +221,6 @@ def main_from_file():
             emb_df.to_csv("emb_samples_np.csv", index=False, mode="a")
             embeddings = []
             del emb_df
-        print(f"Sample {counter} of {n_samp}", end="\r")
 
 from ast_traverser import *
 def traverse_py_file(path, filename):
