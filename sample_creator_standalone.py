@@ -211,8 +211,7 @@ def main_from_file():
             ti_emb = text_model(**ti_tokens)
             ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
             ci_emb = code_model(**ci_tokens)
-            print(ti_emb.numpy())
-            embeddings.append((ti_emb.numpy(), ci_emb.numpy(), row['label']))
+            embeddings.append((ti_emb.detach().cpu().numpy(), ci_emb.detach().cpu().numpy(), row['label']))
         except:
             continue
         if counter % 20 == 0:
