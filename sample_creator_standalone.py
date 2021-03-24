@@ -191,10 +191,13 @@ def main_scs():
 
 def main_from_file():
     embeddings = []
+    print("Loading SciBERT...")
     text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
     text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
+    print("Loading CodeBERT...")
     code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
     code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+    print("Reading samples from file...")
     samples = pd.read_csv("samples.csv")
     n_samp = len(samples)
     counter=0
