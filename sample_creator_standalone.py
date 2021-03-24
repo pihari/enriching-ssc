@@ -207,12 +207,12 @@ def main_from_file():
             ti_emb = text_model(**ti_tokens)
             ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
             ci_emb = code_model(**ci_tokens)
-            embeddings.append((ti_emb, ci_emb, row['label']))
+            embeddings.append((ti_emb.numpy(), ci_emb.numpy(), row['label']))
         except:
             continue
         if counter % 20 == 0:
             emb_df = pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb", "label"])
-            emb_df.to_csv("emb_samples.csv", index=False, mode="a")
+            emb_df.to_csv("emb_samples_np.csv", index=False, mode="a")
             embeddings = []
             del emb_df
         print(f"Sample {counter} of {n_samp}", end="\r")
