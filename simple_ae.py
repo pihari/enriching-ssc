@@ -59,7 +59,7 @@ class SimpleLeaner(object):
         self.cur_batch = self.input[:self.batch_size,:]
         self.cur_target = self.target[:self.batch_size,:]
         self.batch_num = 0
-        self.batch_num_total = self.input_dim[0] // self.batch_size + (self.input_dim[0] % self.-batch_size != 0)
+        self.batch_num_total = self.input_dim[0] // self.batch_size + (self.input_dim[0] % self.batch_size != 0)
 
     def reset(self):
         self.batch_num = 0
