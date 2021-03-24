@@ -201,6 +201,7 @@ def main_from_file():
     samples = pd.read_csv("samples.csv")
     n_samp = len(samples)
     counter=0
+    print("Starting sample generation...")
     for index, row in samples.iterrows():
         counter += 1
         ti = row['paper_tokens']
@@ -210,6 +211,7 @@ def main_from_file():
             ti_emb = text_model(**ti_tokens)
             ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
             ci_emb = code_model(**ci_tokens)
+            print(ti_emb.numpy())
             embeddings.append((ti_emb.numpy(), ci_emb.numpy(), row['label']))
         except:
             continue
