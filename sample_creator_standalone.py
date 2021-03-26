@@ -242,7 +242,7 @@ def main_from_file():
         if counter % 20 == 0:
             pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb"]).to_csv(filepath, index=False, mode="a")
             embeddings = []
-        if os.path.isfile(filepath) and os.stat(filepath).st_size / 1024 > 32*10^6:
+        if os.path.isfile(filepath) and os.stat(filepath).st_size > 3.2*10^10:
             fi += 1
             filepath = os.path.join("/data/s1/haritz/", f"emb_samples_np_{fi}.csv")
 
