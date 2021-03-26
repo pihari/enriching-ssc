@@ -108,7 +108,7 @@ class AEVisualizer:
             plt.close()
 
 if __name__ == '__main__':
-    data_dir = 'emb_samples.csv'
+    data_dir = os.path.join("/data/s1/haritz", "emb_samples_np.csv")
     lr = 1e-5
     epochs = 20
     batch_size = 512
