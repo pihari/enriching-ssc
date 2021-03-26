@@ -79,7 +79,7 @@ class SimpleLeaner(object):
                 self.SimpleAE.optimizer.zero_grad()
                 pred = self.SimpleAE.forward(self.cur_batch)
                 loss = self.SimpleAE.loss(pred, self.cur_target)
-                print(f'epoch: {str(epoch+1)}, batch: {str(batch+1)}, loss: {str.(loss.item())}')
+                print(f'epoch: {str(epoch+1)}, batch: {str(batch+1)}, loss: {str(loss.item())}')
                 loss.backward()
                 self.next_batch()
                 self.SimpleAE.optimizer.step()
