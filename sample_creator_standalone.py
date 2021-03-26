@@ -202,25 +202,45 @@ def main_from_file():
     n_samp = len(samples)
     counter=0
     print("Starting sample generation...")
+    np.set_printoptions(threshold=sys.maxsize) # prevents ... in string of exported data
+    filepath = os.path.join("/data/s1/haritz/", "emb_samples_np.csv")
     for index, row in samples.iterrows():
         print(f"Sample {counter} of {n_samp}", end="\r")
         counter += 1
         ti = row['paper_tokens']
         ci = row['code_tokens']
         try:
+            # print("Trying very hard...")
             ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
-            ti_emb = text_model(**ti_tokens)
+            ti_emb = text_model(**ti_tokens, output_hidden_states=True)
+            # first tensor last_hidden_state:
+            # ti_emb_t0 = ti_emb[0].detach().cpu().numpy()
+            # print(ti_emb_t0_avg)
+            # second tensor pooler_output not needed
+            # third tensor is sequence of hidden states for input sequence
+            # averaging this sequence is best for keeping semantics
+            ti_emb_allhidden = ti_emb[2]
+            ti_emb_allhidden_list = []
+            for h in ti_emb_allhidden:
+                ti_emb_allhidden_list.append(h.detach().cpu().numpy())
+            ti_emb_allhidden_np = np.asarray(ti_emb_allhidden_list)
+            ti_emb_avg = np.mean(ti_emb_allhidden_np, axis=0)
+
             ci_tokens = code_tokenizer(ci, return_tensors="pt", padding=True, truncation=True)
-            ci_emb = code_model(**ci_tokens)
-            print(ti_emb.size(), ci_emb.size())
-            embeddings.append((ti_emb.detach().cpu().numpy(), ci_emb.detach().cpu().numpy(), row['label']))
+            ci_emb = code_model(**ci_tokens, output_hidden_states=True)
+            ci_emb_allhidden = ci_emb[2]
+            ci_emb_allhidden_list = []
+            for h in ci_emb_allhidden:
+                ci_emb_allhidden_list.append(h.detach().cpu().numpy())
+            ci_emb_allhidden_np = np.asarray(ci_emb_allhidden_list)
+            ci_emb_avg = np.mean(ci_emb_allhidden_np, axis=0)
+
+            embeddings.append((ti_emb_avg, ci_emb_avg)) #row['label']))
         except:
-            continue
+            break
         if counter % 20 == 0:
-            emb_df = pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb", "label"])
-            emb_df.to_csv("emb_samples_np.csv", index=False, mode="a")
+            pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb"]).to_csv(filepath, index=False, mode="a")
             embeddings = []
-            del emb_df
 
 from ast_traverser import *
 def traverse_py_file(path, filename):
