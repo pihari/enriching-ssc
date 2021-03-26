@@ -203,9 +203,10 @@ def main_from_file():
     counter=0
     print("Starting sample generation...")
     np.set_printoptions(threshold=sys.maxsize) # prevents ... in string of exported data
-    filepath = os.path.join("/data/s1/haritz/", "emb_samples_np.csv")
+    fi = 0
+    filepath = os.path.join("/data/s1/haritz/", f"emb_samples_np_{fi}.csv")
     for index, row in samples.iterrows():
-        print(f"Sample {counter} of {n_samp}", end="\r")
+        print(f"Sample {counter} of {n_samp}. Currently in file {fi+1}", end="\r")
         counter += 1
         ti = row['paper_tokens']
         ci = row['code_tokens']
@@ -241,6 +242,9 @@ def main_from_file():
         if counter % 20 == 0:
             pd.DataFrame(embeddings, columns = ["paper_emb", "code_emb"]).to_csv(filepath, index=False, mode="a")
             embeddings = []
+        if os.stat(filepath).st_size / 1024 > 32*10^6:
+            fi += 1
+            filepath = os.path.join("/data/s1/haritz/", f"emb_samples_np_{fi}.csv")
 
 from ast_traverser import *
 def traverse_py_file(path, filename):
