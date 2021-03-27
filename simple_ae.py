@@ -149,7 +149,8 @@ if __name__ == '__main__':
                 ti_emb_allhidden = ti_emb[2]
                 ti_emb_avg = torch.mean(ti_emb_allhidden, dim=0) #axis=0?
                 t_list.append(ti_emb_avg)
-            except:
+            except Exception as e:
+                print(e)
                 break
             if counter % batch_size == 0:
                 t_shape = list(t_list[0].size())
