@@ -8,7 +8,7 @@ class AEData:
         self.dir = dir
 
     def load_samples(self):
-        df = pd.read_csv(self.dir)
+        return pd.read_csv(self.dir)
 
     def import_data(self):
         df = pd.read_csv(self.dir)
