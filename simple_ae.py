@@ -127,6 +127,7 @@ if __name__ == '__main__':
     epochs = 20
     batch_size = 256
     ae = SimpleAE(lr)
+    data_dir = "samples.csv"
     data = AEData(data_dir)
     samples = data.load_samples()
     #target, input = data.import_data()
