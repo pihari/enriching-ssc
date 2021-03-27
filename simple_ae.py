@@ -160,7 +160,7 @@ if __name__ == '__main__':
                 print(e)
                 break
             if counter % batch_size == 0:
-                t_shape = list(t_list)
+                t_shape = list(t_list.size())
                 t_shape[0] *= batch_size
                 target = torch.empty(t_shape)
                 input = torch.empty(t_shape)
