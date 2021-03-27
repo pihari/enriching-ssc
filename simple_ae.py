@@ -33,7 +33,7 @@ class SimpleAE(nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.BCELoss()
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, input):
@@ -45,7 +45,7 @@ class SimpleAE(nn.Module):
         dec1_out = F.relu(self.dec_l1(interm))
         dec2_out = F.relu(self.dec_l2(dec1_out))
 
-        out = T.sigmoid(self.out(dec2_out))
+        out = torch.sigmoid(self.out(dec2_out))
 
         return out
 
@@ -107,7 +107,7 @@ class AEVisualizer:
     def visualize(self):
         for _, i in enumerate(self.samples):
             output = self.model.forward(self.target[i]).view(28, 28)
-            cat_img = T.cat((self.target[i].view(28, 28), output), 1)
+            cat_img = torch.cat((self.target[i].view(28, 28), output), 1)
             plt.imshow(cat_img.cpu().detach().numpy())
             plt.title('AE target / output')
             plt.savefig('./out_images/sample'+str(_+1))
