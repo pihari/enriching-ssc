@@ -115,6 +115,7 @@ class AEVisualizer:
 
 class Bertifier:
     def __init__(self):
+        print("Initializing BERTs...")
         self.text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
         self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
         self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
@@ -130,6 +131,7 @@ if __name__ == '__main__':
     data_dir = "samples.csv"
     data = AEData(data_dir)
     samples = data.load_samples()
+    bert = Bertifier()
     #target, input = data.import_data()
 
     n_samp = len(samples)
@@ -144,8 +146,8 @@ if __name__ == '__main__':
             ti = row['paper_tokens']
             ci = row['code_tokens']
             try:
-                ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
-                ti_emb = text_model(**ti_tokens, output_hidden_states=True)
+                ti_tokens = bert.text_tokenizer(ti, return_tensors="pt", padding=True)
+                ti_emb = bert.text_model(**ti_tokens, output_hidden_states=True)
                 ti_emb_allhidden = ti_emb[2]
                 ti_emb_avg = torch.mean(ti_emb_allhidden, dim=0) #axis=0?
                 t_list.append(ti_emb_avg)
