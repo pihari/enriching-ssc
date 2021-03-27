@@ -126,7 +126,7 @@ from transformers import *
 if __name__ == '__main__':
     #data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
     lr = 1e-5
-    epochs = 20
+    epochs = 5
     batch_size = 256
     ae = SimpleAE(lr)
     data_dir = "samples.csv"
@@ -150,7 +150,11 @@ if __name__ == '__main__':
                 ti_tokens = bert.text_tokenizer(ti, return_tensors="pt", padding=True)
                 ti_emb = bert.text_model(**ti_tokens, output_hidden_states=True)
                 ti_emb_allhidden = ti_emb[2]
-                ti_emb_avg = torch.mean(ti_emb_allhidden, dim=0) #axis=0?
+                ti_emb_allhidden_list = []
+                for h in ti_emb_allhidden:
+                    ti_emb_allhidden_list.append(h.detach().cpu().numpy())
+                ti_emb_allhidden_np = np.asarray(ti_emb_allhidden_list)
+                ti_emb_avg = np.mean(ti_emb_allhidden_np, axis=0)
                 t_list.append(ti_emb_avg)
             except Exception as e:
                 print(e)
