@@ -155,12 +155,12 @@ if __name__ == '__main__':
                     ti_emb_allhidden_list.append(h.detach().cpu().numpy())
                 ti_emb_allhidden_np = np.asarray(ti_emb_allhidden_list)
                 ti_emb_avg = np.mean(ti_emb_allhidden_np, axis=0)
-                t_list.append(ti_emb_avg)
+                t_list.append(torch.from_numpy(ti_emb_avg))
             except Exception as e:
                 print(e)
                 break
             if counter % batch_size == 0:
-                t_shape = list(t_list[0].size())
+                t_shape = list(t_list)
                 t_shape[0] *= batch_size
                 target = torch.Tensor(t_shape)
                 input = torch.Tensor(t_shape)
