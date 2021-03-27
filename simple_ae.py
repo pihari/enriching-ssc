@@ -171,5 +171,5 @@ if __name__ == '__main__':
                     learner.next_input(input, target)
                     model = learner.learn()
 
-        visualizer = AEVisualizer(target, model)
-        visualizer.visualize()
+        #visualizer = AEVisualizer(target, model)
+        #visualizer.visualize()
