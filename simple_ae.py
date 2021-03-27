@@ -107,15 +107,15 @@ class AEVisualizer:
             plt.savefig('./out_images/sample'+str(_+1))
             plt.close()
 
+import os
 if __name__ == '__main__':
-    data_dir = os.path.join("/data/s1/haritz", "emb_samples_np.csv")
+    data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
     lr = 1e-5
     epochs = 20
-    batch_size = 512
-
+    batch_size = 256
+    ae = SimpleAE(lr)
     data = AEData(data_dir)
     target, input = data.import_data()
-    ae = SimpleAE(lr)
     target = target.to(ae.device)
     input = input.to(ae.device)
     print(target.shape, input.shape)
