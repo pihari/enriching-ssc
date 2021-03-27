@@ -162,8 +162,8 @@ if __name__ == '__main__':
             if counter % batch_size == 0:
                 t_shape = list(t_list)
                 t_shape[0] *= batch_size
-                target = torch.Tensor(t_shape)
-                input = torch.Tensor(t_shape)
+                target = torch.empty(t_shape)
+                input = torch.empty(t_shape)
                 torch.cat(t_list, out=target)
                 torch.cat(t_list, out=input)
                 target = target.to(ae.device)
