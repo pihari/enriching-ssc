@@ -122,6 +122,7 @@ class Bertifier:
         self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
 
 import os
+from transformers import *
 if __name__ == '__main__':
     #data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
     lr = 1e-5
