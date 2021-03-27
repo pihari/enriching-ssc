@@ -7,6 +7,9 @@ class AEData:
     def __init__(self, dir):
         self.dir = dir
 
+    def load_samples(self):
+        df = pd.read_csv(self.dir)
+
     def import_data(self):
         df = pd.read_csv(self.dir)
         target_data = df.iloc[:, 1:]
@@ -28,7 +31,7 @@ class SimpleAE(nn.Module):
 
         self.out = nn.Linear(768, 768)
 
-        self.optimizer = torch.optimizer.Adam(self.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.BCELoss()
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
@@ -60,6 +63,10 @@ class SimpleLeaner(object):
         self.cur_target = self.target[:self.batch_size,:]
         self.batch_num = 0
         self.batch_num_total = self.input_dim[0] // self.batch_size + (self.input_dim[0] % self.batch_size != 0)
+    
+    def next_input(self, input, target):
+        self.input = Variable(input)
+        self.target = Variable(target)
 
     def reset(self):
         self.batch_num = 0
@@ -74,15 +81,14 @@ class SimpleLeaner(object):
             self.reset()
     
     def learn(self):
-        for epoch in range(self.epochs):
-            for batch in range(self.batch_num_total):
-                self.SimpleAE.optimizer.zero_grad()
-                pred = self.SimpleAE.forward(self.cur_batch)
-                loss = self.SimpleAE.loss(pred, self.cur_target)
-                print(f'epoch: {str(epoch+1)}, batch: {str(batch+1)}, loss: {str(loss.item())}')
-                loss.backward()
-                self.next_batch()
-                self.SimpleAE.optimizer.step()
+        for batch in range(self.batch_num_total):
+            self.SimpleAE.optimizer.zero_grad()
+            pred = self.SimpleAE.forward(self.cur_batch)
+            loss = self.SimpleAE.loss(pred, self.cur_target)
+            print(f'batch: {str(batch+1)}, loss: {str(loss.item())}')
+            loss.backward()
+            self.next_batch()
+            self.SimpleAE.optimizer.step()
         return self.SimpleAE
 
 import matplotlib.pyplot as plt
@@ -107,19 +113,62 @@ class AEVisualizer:
             plt.savefig('./out_images/sample'+str(_+1))
             plt.close()
 
+class Bertifier:
+    def __init__(self):
+        self.text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
+        self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
+        self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
+        self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+
 import os
 if __name__ == '__main__':
-    data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
+    #data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
     lr = 1e-5
     epochs = 20
     batch_size = 256
     ae = SimpleAE(lr)
     data = AEData(data_dir)
-    target, input = data.import_data()
-    target = target.to(ae.device)
-    input = input.to(ae.device)
-    print(target.shape, input.shape)
+    samples = data.load_samples()
+    #target, input = data.import_data()
 
-    learner = SimpleLeaner(ae, input, target, batch_size=batch_size, epochs=epochs)
-    visualizer = AEVisualizer(target, model)
-    visualizer.visualize()
+    n_samp = len(samples)
+    ae_init = False
+    model = None
+    for epoch in range(epochs):
+        counter = 0
+        t_list = []
+        for index, row in samples.iterrows():
+            print(f"Sample {counter} of {n_samp}.", end="\r")
+            counter += 1
+            ti = row['paper_tokens']
+            ci = row['code_tokens']
+            try:
+                ti_tokens = text_tokenizer(ti, return_tensors="pt", padding=True)
+                ti_emb = text_model(**ti_tokens, output_hidden_states=True)
+                ti_emb_allhidden = ti_emb[2]
+                ti_emb_avg = torch.mean(ti_emb_allhidden, dim=0) #axis=0?
+                t_list.append(ti_emb_avg)
+            except:
+                break
+            if counter % batch_size == 0:
+                t_shape = list(t_list[0].size())
+                t_shape[0] *= batch_size
+                target = torch.Tensor(t_shape)
+                input = torch.Tensor(t_shape)
+                torch.cat(t_list, out=target)
+                torch.cat(t_list, out=input)
+                target = target.to(ae.device)
+                input = input.to(ae.device)
+                print(target.shape, input.shape)
+                t_list = []
+
+                if not ae_init:
+                    learner = SimpleLeaner(ae, input, target, batch_size=batch_size, epochs=epochs)
+                    model = learner.learn()
+                    ae_init = True
+                else:
+                    learner.next_input(input, target)
+                    model = learner.learn()
+
+        visualizer = AEVisualizer(target, model)
+        visualizer.visualize()
