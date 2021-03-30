@@ -106,7 +106,7 @@ class SimpleLeaner(object):
             pred_paper, pred_code = self.SimpleAE.forward(self.cur_batch)
             loss = self.SimpleAE.loss(pred_paper, self.cur_target)
             loss_c = self.SimpleAE.loss(pred_code, self.cur_target)
-            print(f'batch: {str(batch+1)}, loss: {str(loss.item())}')
+            print(f'batch: {str(batch_num+1)}, loss: {str(loss.item())}')
             loss.backward()
             loss_c.backward()
             self.next_batch()
@@ -152,7 +152,7 @@ class Bertifier:
             tokenizer = self.code_tokenizer
             model = self.code_model
     
-        tok = tokenizer(data, return_tensors="pt", padding=True)
+        tok = tokenizer(data, return_tensors="pt", padding=True, truncation=(not text))
         emb = model(**tok, output_hidden_states=True)
         emb_allhidden = emb[2]
         emb_list = []
