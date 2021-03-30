@@ -21,18 +21,18 @@ class AEData:
 class SimpleAE(nn.Module):
     def __init__(self, lr=1e-5):
         super(SimpleAE, self).__init__()
-        self.enc_l1 = nn.Linear(768, 768)
-        self.enc_l2 = nn.Linear(768, 768)
+        self.enc_l1 = nn.Linear(768, 512)
+        self.enc_l2 = nn.Linear(512, 256)
 
-        self.intermed = nn.Linear(768, 768)
+        self.intermed = nn.Linear(256, 128)
 
-        self.dec_l1 = nn.Linear(768, 768)
-        self.dec_l2 = nn.Linear(768, 768)
+        self.dec_l1 = nn.Linear(128, 256)
+        self.dec_l2 = nn.Linear(256, 512)
 
-        self.out = nn.Linear(768, 768)
+        self.out = nn.Linear(512, 768)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        self.loss = nn.BCELoss()
+        self.loss = nn.MSELoss()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
@@ -125,9 +125,9 @@ import os
 from transformers import *
 if __name__ == '__main__':
     #data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
-    lr = 1e-5
+    lr = 1e-4
     epochs = 5
-    batch_size = 256
+    batch_size = 512
     ae = SimpleAE(lr)
     data_dir = "samples.csv"
     data = AEData(data_dir)
@@ -156,6 +156,8 @@ if __name__ == '__main__':
                 ti_emb_allhidden_np = np.asarray(ti_emb_allhidden_list)
                 ti_emb_avg = np.mean(ti_emb_allhidden_np, axis=0)
                 ti_emb_avg = np.mean(ti_emb_avg, axis=1)
+                ti_emb_avg += 1
+                ti_emb_avg /= 2
                 t_list.append(torch.from_numpy(ti_emb_avg))
             except Exception as e:
                 print(e)
