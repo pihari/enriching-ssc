@@ -200,6 +200,7 @@ if __name__ == '__main__':
             if counter % batch_size == 0:
                 tp_list, tc_list = zip(*t_list)
                 t_shape = list(tp_list[0].size()) #prior pooling results in equal size
+                print(t_shape)
                 t_shape[0] *= batch_size
                 target_paper = torch.empty(t_shape)
                 input_paper = torch.empty(t_shape)
@@ -210,6 +211,7 @@ if __name__ == '__main__':
 
                 t_shape = list(tc_list[0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
+                print(t_shape)
                 target_code = torch.empty(t_shape)
                 input_code = torch.empty(t_shape)
                 torch.cat(tc_list, out=target_code)
@@ -219,7 +221,7 @@ if __name__ == '__main__':
 
                 input = (input_paper, input_code)
                 target = (target_paper, target_code)
-                print(target.shape, input.shape)
+                #print(target.shape, input.shape)
                 t_list = []
 
                 if not ae_init:
