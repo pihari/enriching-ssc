@@ -31,13 +31,22 @@ class SimpleAE(nn.Module):
 
         self.out = nn.Linear(512, 768)
 
+        self.enc2_l1 = nn.Linear(768, 512)
+        self.enc2_l2 = nn.Linear(512, 256)
+        self.intermed2 = nn.Linear(256, 128)
+        self.dec2_l1 = nn.Linear(128, 256)
+        self.dec2_l2 = nn.Linear(256, 512)
+        self.out2 = nn.Linear(512, 768)
+
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, input):
-        enc1_out = F.relu(self.enc_l1(input))
+        input_paper, input_code = input
+
+        enc1_out = F.relu(self.enc_l1(input_paper))
         enc2_out = F.relu(self.enc_l2(enc1_out))
 
         interm = self.intermed(enc2_out)
@@ -45,9 +54,20 @@ class SimpleAE(nn.Module):
         dec1_out = F.relu(self.dec_l1(interm))
         dec2_out = F.relu(self.dec_l2(dec1_out))
 
-        out = torch.sigmoid(self.out(dec2_out))
+        paper_out = torch.sigmoid(self.out(dec2_out))
 
-        return out
+        enc1_out = F.relu(self.enc2_l1(input_code))
+        enc2_out = F.relu(self.enc2_l2(enc1_out))
+
+        interm = self.intermed(enc2_out)
+
+        dec1_out = F.relu(self.dec2_l1(interm))
+        dec2_out = F.relu(self.dec2_l2(dec1_out))
+
+        code_out = torch.sigmoid(self.out2(dec2_out))
+
+        return (paper_out, code_out)
+    
 
 from torch.autograd import Variable
 class SimpleLeaner(object):
@@ -83,10 +103,12 @@ class SimpleLeaner(object):
     def learn(self):
         for batch in range(self.batch_num_total):
             self.SimpleAE.optimizer.zero_grad()
-            pred = self.SimpleAE.forward(self.cur_batch)
-            loss = self.SimpleAE.loss(pred, self.cur_target)
+            pred_paper, pred_code = self.SimpleAE.forward(self.cur_batch)
+            loss = self.SimpleAE.loss(pred_paper, self.cur_target)
+            loss_c = self.SimpleAE.loss(pred_code, self.cur_target)
             print(f'batch: {str(batch+1)}, loss: {str(loss.item())}')
             loss.backward()
+            loss_c.backward()
             self.next_batch()
             self.SimpleAE.optimizer.step()
         return self.SimpleAE
@@ -120,6 +142,28 @@ class Bertifier:
         self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
         self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
         self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+    
+    def calc_tensor(self, data, text=True):
+        
+        if text:
+            tokenizer = self.text_tokenizer
+            model = self.text_model
+        else:
+            tokenizer = self.code_tokenizer
+            model = self.code_model
+    
+        tok = tokenizer(data, return_tensors="pt", padding=True)
+        emb = model(**tok, output_hidden_states=True)
+        emb_allhidden = emb[2]
+        emb_list = []
+        for h in emb_allhidden:
+            emb_list.append(h.detach().cpu().numpy())
+        emb_np = np.asarray(emb_list)
+        emb_avg = np.mean(emb_np, axis=0)
+        emb_avg = np.mean(ti_emb_avg, axis=1)
+        emb_avg += 1
+        emb_avg /= 2
+        return torch.from_numpy(emb_avg)
 
 import os
 from transformers import *
@@ -147,30 +191,33 @@ if __name__ == '__main__':
             ti = row['paper_tokens']
             ci = row['code_tokens']
             try:
-                ti_tokens = bert.text_tokenizer(ti, return_tensors="pt", padding=True)
-                ti_emb = bert.text_model(**ti_tokens, output_hidden_states=True)
-                ti_emb_allhidden = ti_emb[2]
-                ti_emb_allhidden_list = []
-                for h in ti_emb_allhidden:
-                    ti_emb_allhidden_list.append(h.detach().cpu().numpy())
-                ti_emb_allhidden_np = np.asarray(ti_emb_allhidden_list)
-                ti_emb_avg = np.mean(ti_emb_allhidden_np, axis=0)
-                ti_emb_avg = np.mean(ti_emb_avg, axis=1)
-                ti_emb_avg += 1
-                ti_emb_avg /= 2
-                t_list.append(torch.from_numpy(ti_emb_avg))
+                ti_tensor = bert.calc_tensor(ti, text=True)
+                ci_tensor = bert.calc_tensor(ci, text=False)
+                t_list.append((ti_tensor, ci_tensor))
             except Exception as e:
                 print(e)
                 break
             if counter % batch_size == 0:
-                t_shape = list(t_list[0].size()) #prior pooling results in equal size
+                t_shape = list(t_list[0][0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
-                target = torch.empty(t_shape)
-                input = torch.empty(t_shape)
-                torch.cat(t_list, out=target)
-                torch.cat(t_list, out=input)
-                target = target.to(ae.device)
-                input = input.to(ae.device)
+                target_paper = torch.empty(t_shape)
+                input_paper = torch.empty(t_shape)
+                torch.cat(t_list, out=target_paper)
+                torch.cat(t_list, out=input_paper)
+                target_paper = target_paper.to(ae.device)
+                input_paper = input_paper.to(ae.device)
+
+                t_shape = list(t_list[0][1].size()) #prior pooling results in equal size
+                t_shape[0] *= batch_size
+                target_code = torch.empty(t_shape)
+                input_code = torch.empty(t_shape)
+                torch.cat(t_list, out=target_code)
+                torch.cat(t_list, out=input_code)
+                target_code = target_code.to(ae.device)
+                input_code = input_code.to(ae.device)
+
+                input = (input_paper, input_code)
+                target = (target_paper, target_code)
                 print(target.shape, input.shape)
                 t_list = []
 
