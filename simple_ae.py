@@ -160,7 +160,7 @@ class Bertifier:
             emb_list.append(h.detach().cpu().numpy())
         emb_np = np.asarray(emb_list)
         emb_avg = np.mean(emb_np, axis=0)
-        emb_avg = np.mean(ti_emb_avg, axis=1)
+        emb_avg = np.mean(emb_avg, axis=1)
         emb_avg += 1
         emb_avg /= 2
         return torch.from_numpy(emb_avg)
