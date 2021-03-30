@@ -198,21 +198,22 @@ if __name__ == '__main__':
                 print(e)
                 break
             if counter % batch_size == 0:
-                t_shape = list(t_list[0][0].size()) #prior pooling results in equal size
+                tp_list, tc_list = zip(*t_list)
+                t_shape = list(tp_list[0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
                 target_paper = torch.empty(t_shape)
                 input_paper = torch.empty(t_shape)
-                torch.cat(t_list, out=target_paper)
-                torch.cat(t_list, out=input_paper)
+                torch.cat(tp_list, out=target_paper)
+                torch.cat(tp_list, out=input_paper)
                 target_paper = target_paper.to(ae.device)
                 input_paper = input_paper.to(ae.device)
 
-                t_shape = list(t_list[0][1].size()) #prior pooling results in equal size
+                t_shape = list(tc_list[0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
                 target_code = torch.empty(t_shape)
                 input_code = torch.empty(t_shape)
-                torch.cat(t_list, out=target_code)
-                torch.cat(t_list, out=input_code)
+                torch.cat(tc_list, out=target_code)
+                torch.cat(tc_list, out=input_code)
                 target_code = target_code.to(ae.device)
                 input_code = input_code.to(ae.device)
 
