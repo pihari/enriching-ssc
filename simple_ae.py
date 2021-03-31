@@ -11,7 +11,7 @@ class CustomLoss(nn.Module):
     def forward(self, input, target):
         split_in = torch.split(input, self.EMB_SIZE, 1)
         split_tar = torch.split(target, self.EMB_SIZE, 1)
-        return (F.MSELoss(split_in[0], split_tar[0]) + F.MSELoss(split_in[1], split_tar[1]))
+        return (F.mse_loss(split_in[0], split_tar[0]) + F.mse_loss(split_in[1], split_tar[1]))
 
 class AEData:
     def __init__(self, dir):
