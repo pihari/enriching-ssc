@@ -44,7 +44,10 @@ class SimpleAE(nn.Module):
         self.to(self.device)
 
     def forward(self, input):
-        input_paper, input_code = input
+        EMB_SIZE = 768
+        split_t = torch.split(input, EMB_SIZE, 1)
+        input_paper = split_t[0]
+        input_code = split_t[1]
 
         enc1_out = F.relu(self.enc_l1(input_paper))
         enc2_out = F.relu(self.enc_l2(enc1_out))
@@ -66,7 +69,7 @@ class SimpleAE(nn.Module):
 
         code_out = torch.sigmoid(self.out2(dec2_out))
 
-        return (paper_out, code_out)
+        return torch.cat((paper_out, code_out), dim=1)
     
 
 from torch.autograd import Variable
@@ -103,12 +106,10 @@ class SimpleLeaner(object):
     def learn(self):
         for batch in range(self.batch_num_total):
             self.SimpleAE.optimizer.zero_grad()
-            pred_paper, pred_code = self.SimpleAE.forward(self.cur_batch)
-            loss = self.SimpleAE.loss(pred_paper, self.cur_target)
-            loss_c = self.SimpleAE.loss(pred_code, self.cur_target)
-            print(f'batch: {str(batch_num+1)}, loss: {str(loss.item())}')
+            pred = self.SimpleAE.forward(self.cur_batch)
+            loss = self.SimpleAE.loss(pred, self.cur_target)
+            print(f'batch: {str(self.batch_num+1)}, loss: {str(loss.item())}')
             loss.backward()
-            loss_c.backward()
             self.next_batch()
             self.SimpleAE.optimizer.step()
         return self.SimpleAE
@@ -161,6 +162,7 @@ class Bertifier:
         emb_np = np.asarray(emb_list)
         emb_avg = np.mean(emb_np, axis=0)
         emb_avg = np.mean(emb_avg, axis=1)
+        #print(emb_avg.shape)
         emb_avg += 1
         emb_avg /= 2
         return torch.from_numpy(emb_avg)
@@ -200,7 +202,6 @@ if __name__ == '__main__':
             if counter % batch_size == 0:
                 tp_list, tc_list = zip(*t_list)
                 t_shape = list(tp_list[0].size()) #prior pooling results in equal size
-                print(t_shape)
                 t_shape[0] *= batch_size
                 target_paper = torch.empty(t_shape)
                 input_paper = torch.empty(t_shape)
@@ -211,7 +212,6 @@ if __name__ == '__main__':
 
                 t_shape = list(tc_list[0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
-                print(t_shape)
                 target_code = torch.empty(t_shape)
                 input_code = torch.empty(t_shape)
                 torch.cat(tc_list, out=target_code)
@@ -219,8 +219,8 @@ if __name__ == '__main__':
                 target_code = target_code.to(ae.device)
                 input_code = input_code.to(ae.device)
 
-                input = (input_paper, input_code)
-                target = (target_paper, target_code)
+                input = torch.cat((input_paper, input_code), dim=1)
+                target = torch.cat((target_paper, target_code), dim=1)
                 #print(target.shape, input.shape)
                 t_list = []
 
