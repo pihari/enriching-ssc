@@ -3,6 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
 
+class CustomLoss(nn._Loss):
+    def __init__(self, size_average=None, reduce=None, reduction: str = 'mean') -> None:
+        super(CustomLoss, self).__init__(size_average, reduce, reduction)
+        self.EMB_SIZE = 768
+    
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.ensor:
+        split_in = torch.split(input, self.EMB_SIZE, 1)
+        split_tar = torch.split(target, self.EMB_SIZE, 1)
+        return (F.MSELoss(split_in[0], split_tar[0]) + F.MSELoss(split_in[1], split_tar[1]))
+
 class AEData:
     def __init__(self, dir):
         self.dir = dir
@@ -39,7 +49,7 @@ class SimpleAE(nn.Module):
         self.out2 = nn.Linear(512, 768)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        self.loss = nn.MSELoss()
+        self.loss = CustomLoss()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
