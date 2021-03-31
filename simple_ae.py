@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
 
-class CustomLoss(nn.Modules.Loss):
+class CustomLoss(nn.Module):
     def __init__(self, size_average=None, reduce=None, reduction: str = 'mean') -> None:
         super(CustomLoss, self).__init__(size_average, reduce, reduction)
         self.EMB_SIZE = 768
