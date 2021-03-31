@@ -4,11 +4,11 @@ import torch.nn.functional as F
 import pandas as pd
 
 class CustomLoss(nn.Module):
-    def __init__(self, size_average=None, reduce=None, reduction: str = 'mean') -> None:
-        super(CustomLoss, self).__init__(size_average, reduce, reduction)
+    def __init__(self):
+        super(CustomLoss, self).__init__()
         self.EMB_SIZE = 768
     
-    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.ensor:
+    def forward(self, input, target):
         split_in = torch.split(input, self.EMB_SIZE, 1)
         split_tar = torch.split(target, self.EMB_SIZE, 1)
         return (F.MSELoss(split_in[0], split_tar[0]) + F.MSELoss(split_in[1], split_tar[1]))
