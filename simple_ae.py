@@ -7,11 +7,19 @@ class CustomLoss(nn.Module):
     def __init__(self):
         super(CustomLoss, self).__init__()
         self.EMB_SIZE = 768
+        self.STATE_SIZE = 128
+        self.y = torch.Tensor(1) #pseudo label (always 1)
     
-    def forward(self, input, target):
+    def forward(self, input, target, state):
         split_in = torch.split(input, self.EMB_SIZE, 1)
         split_tar = torch.split(target, self.EMB_SIZE, 1)
-        return (F.mse_loss(split_in[0], split_tar[0]) + F.mse_loss(split_in[1], split_tar[1]))
+        split_state = torch.split(state, self.STATE_SIZE, 1)
+        loss_p = F.mse_loss(split_in[0], split_tar[0])
+        loss_c = F.mse_loss(split_in[1], split_tar[1])
+        sim_enc = F.cosine_embedding_loss(split_state[0], split_state[1], self.y, reduction='none')
+        sim_enc = sim_enc.abs().mean()
+        print(loss_p.item(), loss_c.item(), sim_enc.item())
+        return loss_p + loss_c + sim_enc
 
 class AEData:
     def __init__(self, dir):
@@ -53,6 +61,8 @@ class SimpleAE(nn.Module):
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
+        self.state = None
+
     def forward(self, input):
         EMB_SIZE = 768
         split_t = torch.split(input, EMB_SIZE, 1)
@@ -72,14 +82,19 @@ class SimpleAE(nn.Module):
         enc1_out = F.relu(self.enc2_l1(input_code))
         enc2_out = F.relu(self.enc2_l2(enc1_out))
 
-        interm = self.intermed(enc2_out)
+        interm2 = self.intermed2(enc2_out)
 
-        dec1_out = F.relu(self.dec2_l1(interm))
+        dec1_out = F.relu(self.dec2_l1(interm2))
         dec2_out = F.relu(self.dec2_l2(dec1_out))
 
         code_out = torch.sigmoid(self.out2(dec2_out))
 
+        self.state = torch.cat((interm, interm2), dim=1)
+
         return torch.cat((paper_out, code_out), dim=1)
+    
+    def get_state(self):
+        return self.state
     
 
 from torch.autograd import Variable
@@ -117,7 +132,8 @@ class SimpleLeaner(object):
         for batch in range(self.batch_num_total):
             self.SimpleAE.optimizer.zero_grad()
             pred = self.SimpleAE.forward(self.cur_batch)
-            loss = self.SimpleAE.loss(pred, self.cur_target)
+            state = self.SimpleAE.get_state()
+            loss = self.SimpleAE.loss(pred, self.cur_target, state)
             print(f'batch: {str(self.batch_num+1)}, loss: {str(loss.item())}')
             loss.backward()
             self.next_batch()
@@ -211,6 +227,7 @@ if __name__ == '__main__':
                 break
             if counter % batch_size == 0:
                 tp_list, tc_list = zip(*t_list)
+                # print(tp_list, tc_list)
                 t_shape = list(tp_list[0].size()) #prior pooling results in equal size
                 t_shape[0] *= batch_size
                 target_paper = torch.empty(t_shape)
