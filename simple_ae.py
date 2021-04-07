@@ -17,9 +17,11 @@ class CustomLoss(nn.Module):
         loss_p = F.mse_loss(split_in[0], split_tar[0])
         loss_c = F.mse_loss(split_in[1], split_tar[1])
         sim_enc = F.cosine_embedding_loss(split_state[0], split_state[1], self.y, reduction='none')
-        sim_enc = sim_enc.abs().mean()
-        print(loss_p.item(), loss_c.item(), sim_enc.item())
-        return loss_p + loss_c + sim_enc
+        cossim = nn.CosineSimilarity()
+        cos_sim_enc = cossim(split_state[0], split_state[1]).mean()
+        #sim_enc = cos_sim_enc.mean()
+        print(loss_p.item(), loss_c.item(), cos_sim_enc.item())
+        return loss_p + loss_c + (1 - cos_sim_enc)
 
 class AEData:
     def __init__(self, dir):
@@ -187,10 +189,10 @@ class Bertifier:
             emb_list.append(h.detach().cpu().numpy())
         emb_np = np.asarray(emb_list)
         emb_avg = np.mean(emb_np, axis=0)
-        emb_avg = np.mean(emb_avg, axis=1)
-        #print(emb_avg.shape)
         emb_avg += 1
         emb_avg /= 2
+        emb_avg = np.mean(emb_avg, axis=1)
+        #print(emb_avg)
         return torch.from_numpy(emb_avg)
 
 import os
