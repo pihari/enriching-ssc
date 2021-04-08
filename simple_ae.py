@@ -17,10 +17,12 @@ class CustomLoss(nn.Module):
         loss_p = F.mse_loss(split_in[0], split_tar[0])
         loss_c = F.mse_loss(split_in[1], split_tar[1])
         sim_enc = F.cosine_embedding_loss(split_state[0], split_state[1], self.y, reduction='none')
+        loss_ctop = F.mse(split_in[1], split_tar[0])
         cossim = nn.CosineSimilarity()
         cos_sim_enc = cossim(split_state[0], split_state[1]).mean()
         #sim_enc = cos_sim_enc.mean()
         print(loss_p.item(), loss_c.item(), cos_sim_enc.item())
+        print(loss_ctop.item())
         return loss_p + loss_c + (1 - cos_sim_enc)
 
 class AEData:
