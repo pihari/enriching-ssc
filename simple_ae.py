@@ -17,7 +17,7 @@ class CustomLoss(nn.Module):
         loss_p = F.mse_loss(split_in[0], split_tar[0])
         loss_c = F.mse_loss(split_in[1], split_tar[1])
         sim_enc = F.cosine_embedding_loss(split_state[0], split_state[1], self.y, reduction='none')
-        loss_ctop = F.mse(split_in[1], split_tar[0])
+        loss_ctop = F.mse_loss(split_in[1], split_tar[0])
         cossim = nn.CosineSimilarity()
         cos_sim_enc = cossim(split_state[0], split_state[1]).mean()
         #sim_enc = cos_sim_enc.mean()
@@ -114,6 +114,7 @@ class SimpleLeaner(object):
         self.cur_batch = self.input[:self.batch_size,:]
         self.cur_target = self.target[:self.batch_size,:]
         self.batch_num = 0
+        print(self.input_dim[0], self.batch_size)
         self.batch_num_total = self.input_dim[0] // self.batch_size + (self.input_dim[0] % self.batch_size != 0)
     
     def next_input(self, input, target):
