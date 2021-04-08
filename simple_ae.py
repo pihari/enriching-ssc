@@ -9,6 +9,7 @@ class CustomLoss(nn.Module):
         self.EMB_SIZE = 768
         self.STATE_SIZE = 128
         self.y = torch.Tensor(1) #pseudo label (always 1)
+        self.loss_data = []
     
     def forward(self, input, target, state):
         split_in = torch.split(input, self.EMB_SIZE, 1)
@@ -19,11 +20,16 @@ class CustomLoss(nn.Module):
         sim_enc = F.cosine_embedding_loss(split_state[0], split_state[1], self.y, reduction='none')
         loss_ctop = F.mse_loss(split_in[1], split_tar[0])
         cossim = nn.CosineSimilarity()
-        cos_sim_enc = cossim(split_state[0], split_state[1]).mean()
+        loss_cos_sim_enc = 1 - cossim(split_state[0], split_state[1]).mean()
         #sim_enc = cos_sim_enc.mean()
-        print(loss_p.item(), loss_c.item(), cos_sim_enc.item())
-        print(loss_ctop.item())
-        return loss_p + loss_c + (1 - cos_sim_enc)
+        print(loss_p.item(), loss_c.item(), loss_cos_sim_enc.item())
+        loss_ae = loss_p + loss_c + loss_cos_sim_enc
+        self.loss_data.append((loss_p.item(), loss_c.item(), loss_cos_sim_enc.item()))
+        return loss_ae
+
+    def get_loss_data(self):
+        return self.loss_data
+    
 
 class AEData:
     def __init__(self, dir):
@@ -114,8 +120,8 @@ class SimpleLeaner(object):
         self.cur_batch = self.input[:self.batch_size,:]
         self.cur_target = self.target[:self.batch_size,:]
         self.batch_num = 0
-        print(self.input_dim[0], self.batch_size)
         self.batch_num_total = self.input_dim[0] // self.batch_size + (self.input_dim[0] % self.batch_size != 0)
+        self.loss_data = []
     
     def next_input(self, input, target):
         self.input = Variable(input)
@@ -144,15 +150,16 @@ class SimpleLeaner(object):
             self.next_batch()
             self.SimpleAE.optimizer.step()
         return self.SimpleAE
+    
+    def get_loss_data(self):
+        return self.SimpleAE.get_loss_data()
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-class AEVisualizer:
-    def __init__(self, target, model):
-        self.target = target
-        self.model = model
-        self.samples = self.select_random()
+class DataVisualizer:
+    def __init__(self, data):
+        self.data = data
     
     def select_random(self):
         rnd = np.random.randint(0, self.target.shape[0]-1, 10)
@@ -166,6 +173,17 @@ class AEVisualizer:
             plt.title('AE target / output')
             plt.savefig('./out_images/sample'+str(_+1))
             plt.close()
+    
+    def plot(self, i):
+        loss_p_data = [d[0] for d in self.data]
+        loss_c_data = [d[1] for d in self.data]
+        loss_cse = [d[2] for d in self.data]
+        loss_ae = loss_p_data + loss_c_data + loss_cse
+        fig, ax = plt.subplots()
+        ax.plot(loss_p_data, loss_c_data, loss_cse, loss_ae)
+        fig.savefig(f'./out_images/loss'+str(_+{i}))
+            
+
 
 class Bertifier:
     def __init__(self):
@@ -264,5 +282,7 @@ if __name__ == '__main__':
                     learner.next_input(input, target)
                     model = learner.learn()
 
-        #visualizer = AEVisualizer(target, model)
-        #visualizer.visualize()
+            plti = counter // self.batch_size
+            loss_data = learner.get_loss_data()
+            visualizer = DataVisualizer(loss_data)
+            visualizer.plot(plti)
