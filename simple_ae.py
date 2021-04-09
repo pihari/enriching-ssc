@@ -1,3 +1,4 @@
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -106,6 +107,9 @@ class SimpleAE(nn.Module):
     def get_state(self):
         return self.state
     
+    def get_loss_data(self):
+        return self.loss.get_loss_data()
+    
 
 from torch.autograd import Variable
 class SimpleLeaner(object):
@@ -179,9 +183,13 @@ class DataVisualizer:
         loss_c_data = [d[1] for d in self.data]
         loss_cse = [d[2] for d in self.data]
         loss_ae = loss_p_data + loss_c_data + loss_cse
-        fig, ax = plt.subplots()
-        ax.plot(loss_p_data, loss_c_data, loss_cse, loss_ae)
-        fig.savefig(f'./out_images/loss'+str(_+{i}))
+        fig = plt.figure()
+        plt.plot(loss_p_data, len(loss_p_data)*[1])
+        plt.plot(loss_c_data, len(loss_c_data)*[1])
+        plt.plot(loss_cse, len(loss_cse)*[1])
+        plt.plot(loss_ae, len(loss_ae)*[1])
+        plt.autoscale()
+        fig.savefig(f'./outimgs/loss_'+str({i}))
             
 
 
@@ -282,7 +290,7 @@ if __name__ == '__main__':
                     learner.next_input(input, target)
                     model = learner.learn()
 
-            plti = counter // self.batch_size
-            loss_data = learner.get_loss_data()
-            visualizer = DataVisualizer(loss_data)
-            visualizer.plot(plti)
+                plti = counter // batch_size
+                loss_data = learner.get_loss_data()
+                visualizer = DataVisualizer(loss_data)
+                visualizer.plot(plti)
