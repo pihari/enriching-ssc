@@ -183,14 +183,15 @@ class DataVisualizer:
         loss_c_data = [d[1] for d in self.data]
         loss_cse = [d[2] for d in self.data]
         loss_ae = [a+b+c for (a,b,c) in zip(loss_p_data, loss_c_data, loss_cse)]
-        print(self.data)
-        fig = plt.figure()
+        over_time = [i for i in range(len(loss_ae))]
+        plt.figure()
         #plt.plot(loss_p_data, len(loss_p_data)*[1])
         #plt.plot(loss_c_data, len(loss_c_data)*[1])
         #plt.plot(loss_cse, len(loss_cse)*[1])
-        plt.plot(loss_ae, len(loss_ae)*[1])
+        plt.plot(over_time, loss_ae)
         plt.autoscale()
-        fig.savefig(f'./outimgs/loss_'+str({i}))
+        plt.savefig(f'./outimgs/loss_'+str({i}))
+        plt.close()
             
 
 
