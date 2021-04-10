@@ -203,6 +203,12 @@ class Bertifier:
         self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
         self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
         self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+
+    def normalize_tensor(self, t):
+        t_max = np.max(t)
+        t_min = np.min(t)
+        t = (t - t_min) / (t_max - t_min)
+        return t
     
     def calc_tensor(self, data, text=True):
         
@@ -221,8 +227,9 @@ class Bertifier:
             emb_list.append(h.detach().cpu().numpy())
         emb_np = np.asarray(emb_list)
         emb_avg = np.mean(emb_np, axis=0)
-        emb_avg += 1
-        emb_avg /= 2
+        emb_avg = normalize_tensor(emb_avg)
+        #emb_avg += 1
+        #emb_avg /= 2
         emb_avg = np.mean(emb_avg, axis=1)
         #print(emb_avg)
         return torch.from_numpy(emb_avg)
