@@ -233,10 +233,13 @@ class Bertifier:
         if not is_2d:
             emb_avg = np.mean(emb_avg, axis=1)
         else:
-            emb_avg = emb_avg.flatten()
-            print(np.shape(emb_avg))
+            emb_avg = np.mean(emb_avg, axis=2)
+            shape = np.shape(emb_avg)
+            input_size = 768
+            emb_padded = np.zeros((shape[0],input_size))
+            emb_padded[:shape[0],:shape[1]] = emb_avg
         #print(emb_avg)
-        return torch.from_numpy(emb_avg)
+        return torch.from_numpy(emb_padded).float()
 
 import os
 from transformers import *
