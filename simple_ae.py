@@ -1,4 +1,5 @@
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -191,7 +192,7 @@ class DataVisualizer:
         plt.plot(over_time, loss_ae, label="total loss")
         plt.autoscale()
         plt.legend()
-        plt.savefig('./outimgs/loss')
+        plt.savefig('./outimgs/loss_norm')
         plt.close()
             
 
@@ -227,7 +228,7 @@ class Bertifier:
             emb_list.append(h.detach().cpu().numpy())
         emb_np = np.asarray(emb_list)
         emb_avg = np.mean(emb_np, axis=0)
-        emb_avg = normalize_tensor(emb_avg)
+        emb_avg = self.normalize_tensor(emb_avg)
         #emb_avg += 1
         #emb_avg /= 2
         emb_avg = np.mean(emb_avg, axis=1)
