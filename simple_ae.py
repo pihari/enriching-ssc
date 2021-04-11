@@ -192,7 +192,7 @@ class DataVisualizer:
         plt.plot(over_time, loss_ae, label="total loss")
         plt.autoscale()
         plt.legend()
-        plt.savefig('./outimgs/loss_norm')
+        plt.savefig('./outimgs/loss_norm_2d')
         plt.close()
             
 
@@ -211,8 +211,7 @@ class Bertifier:
         t = (t - t_min) / (t_max - t_min)
         return t
     
-    def calc_tensor(self, data, text=True):
-        
+    def calc_tensor(self, data, text=True, is_2d=False):
         if text:
             tokenizer = self.text_tokenizer
             model = self.text_model
@@ -220,7 +219,7 @@ class Bertifier:
             tokenizer = self.code_tokenizer
             model = self.code_model
     
-        tok = tokenizer(data, return_tensors="pt", padding=True, truncation=(not text))
+        tok = tokenizer(data, return_tensors="pt", padding=True, truncation=(not text or is_2d))
         emb = model(**tok, output_hidden_states=True)
         emb_allhidden = emb[2]
         emb_list = []
@@ -231,7 +230,11 @@ class Bertifier:
         emb_avg = self.normalize_tensor(emb_avg)
         #emb_avg += 1
         #emb_avg /= 2
-        emb_avg = np.mean(emb_avg, axis=1)
+        if not is_2d:
+            emb_avg = np.mean(emb_avg, axis=1)
+        else:
+            emb_avg = emb_avg.flatten()
+            print(np.shape(emb_avg))
         #print(emb_avg)
         return torch.from_numpy(emb_avg)
 
@@ -240,7 +243,7 @@ from transformers import *
 if __name__ == '__main__':
     #data_dir = os.path.join("/data/s1/haritz", "emb_samples_np_0.csv")
     lr = 1e-4
-    epochs = 5
+    epochs = 1
     batch_size = 512
     ae = SimpleAE(lr)
     data_dir = "samples.csv"
@@ -252,6 +255,7 @@ if __name__ == '__main__':
     n_samp = len(samples)
     ae_init = False
     model = None
+    is_2d = True
     for epoch in range(epochs):
         counter = 0
         t_list = []
@@ -261,8 +265,8 @@ if __name__ == '__main__':
             ti = row['paper_tokens']
             ci = row['code_tokens']
             try:
-                ti_tensor = bert.calc_tensor(ti, text=True)
-                ci_tensor = bert.calc_tensor(ci, text=False)
+                ti_tensor = bert.calc_tensor(ti, text=True, is_2d=is_2d)
+                ci_tensor = bert.calc_tensor(ci, text=False, is_2d=is_2d)
                 t_list.append((ti_tensor, ci_tensor))
             except Exception as e:
                 print(e)
