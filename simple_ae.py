@@ -192,18 +192,23 @@ class DataVisualizer:
         plt.plot(over_time, loss_ae, label="total loss")
         plt.autoscale()
         plt.legend()
-        plt.savefig('./outimgs/loss_norm_2d')
+        plt.savefig('./outimgs/loss_norm_2d_ft')
         plt.close()
             
 
 
 class Bertifier:
-    def __init__(self):
+    def __init__(self, finetuned=False):
         print("Initializing BERTs...")
         self.text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
         self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
         self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-        self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
+        if finetuned:
+            modelpath = "../CodeXGLUE/Code-Text/code-to-text/code/model/python"
+            modelname = "checkpoint-best-bleu"
+            self.code_model = AutoModel.from_pretrained(f"{modelpath}/{modelname}")
+        else:
+            self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
 
     def normalize_tensor(self, t):
         t_max = np.max(t)
