@@ -198,7 +198,7 @@ class DataVisualizer:
 
 
 class Bertifier:
-    def __init__(self, finetuned=False):
+    def __init__(self, finetuned=False, graphcb=False):
         print("Initializing BERTs...")
         self.text_tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
         self.text_model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     data_dir = "samples.csv"
     data = AEData(data_dir)
     samples = data.load_samples()
-    bert = Bertifier()
+    bert = Bertifier(finetuned=True)
     #target, input = data.import_data()
 
     n_samp = len(samples)
