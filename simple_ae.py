@@ -192,7 +192,7 @@ class DataVisualizer:
         plt.plot(over_time, loss_ae, label="total loss")
         plt.autoscale()
         plt.legend()
-        plt.savefig('./outimgs/loss_norm_2d_ft')
+        plt.savefig('./outimgs/loss_norm_2d_graph')
         plt.close()
             
 
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     data_dir = "samples.csv"
     data = AEData(data_dir)
     samples = data.load_samples()
-    bert = Bertifier(finetuned=True)
+    bert = Bertifier(graphcb=True)
     #target, input = data.import_data()
 
     n_samp = len(samples)
