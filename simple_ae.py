@@ -207,6 +207,9 @@ class Bertifier:
             modelpath = "../CodeXGLUE/Code-Text/code-to-text/code/model/python"
             modelname = "checkpoint-best-bleu"
             self.code_model = AutoModel.from_pretrained(f"{modelpath}/{modelname}")
+        elif graphcb:
+            self.code_tokenizer = AutoTokenizer.from_pretrained("microsoft/graphcodebert-base")
+            self.code_model = AutoModel.from_pretrained("microsoft/graphcodebert-base")
         else:
             self.code_model = AutoModel.from_pretrained("microsoft/codebert-base")
 
