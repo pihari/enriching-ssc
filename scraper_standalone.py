@@ -12,7 +12,8 @@ def main_scraper():
         for i in range(len(data)):
             url = data[i]['repo_url']
             aid = data[i]['paper_arxiv_id']
-            if aid is not None and aid.startswith('1901'):
+            yymm = '1902'
+            if aid is not None and aid.startswith(yymm):
                 path = os.path.join(out_path, "repos", aid)
                 if not os.path.isdir(path):
                     print(f"Cloning {url} into {path}")
@@ -22,7 +23,7 @@ def main_scraper():
                         print(f'ERROR! {url} does not exist')
                 else:
                     print(f"Folder with repo {url} already exists. Skipping.")
-                tex_path = os.path.join(out_path, "1901 pwc", aid)
+                tex_path = os.path.join(out_path, f"{yymm} pwc", aid)
                 if not os.path.isdir(tex_path):
                     os.makedirs(tex_path)
                     print(f"Downloading {aid} from arXiv")
