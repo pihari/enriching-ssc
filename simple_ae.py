@@ -263,7 +263,7 @@ if __name__ == '__main__':
     data_dir = "samples.csv"
     data = AEData(data_dir)
     samples = data.load_samples()
-    bert = Bertifier(graphcb=True)
+    bert = Bertifier()
     #target, input = data.import_data()
 
     n_samp = len(samples)
@@ -321,5 +321,9 @@ if __name__ == '__main__':
 
                 plti = counter // batch_size
                 loss_data = learner.get_loss_data()
-                visualizer = DataVisualizer(loss_data)
-                visualizer.plot(plti)
+                #visualizer = DataVisualizer(loss_data)
+                #visualizer.plot(plti)
+    
+    modelpath = "full_ae.pt"
+    torch.save(model, modelpath)
+    # remember to call model.eval() before infering
