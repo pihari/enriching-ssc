@@ -1,5 +1,6 @@
 
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -192,7 +193,9 @@ class DataVisualizer:
         plt.plot(over_time, loss_ae, label="total loss")
         plt.autoscale()
         plt.legend()
-        plt.savefig('./outimgs/loss_norm_2d_graph')
+        imgname = 'loss_norm_2d_graph'
+        imgpath = os.path.join("/data/s1/haritz/outimgs", imgname)
+        plt.savefig(imgpath)
         plt.close()
             
 
