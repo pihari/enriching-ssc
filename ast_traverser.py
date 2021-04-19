@@ -256,7 +256,6 @@ class VariableFinder(ast.NodeVisitor):
         self.imps = imps
     
     def visit_Name(self, node):
-        # TODO: group variables by functions
         if node.id not in self.funcs and node.id is not "self" and node.id not in self.imps:
             self.vars.append((node.lineno, node.id))
         self.generic_visit(node)
